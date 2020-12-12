@@ -59,37 +59,31 @@ def run_algorithm(script, covType, algorithm, prog, v, rep):
 
     B = int(numOfTCS * reduction)
 
-    if algorithm == "FAST++":
-            pTime, rTime, sel = fastr.fastPlusPlus(inputFile, dim=dim, B=B)
-            selection = sel
+    #if algorithm == "FAST++":
+    #        pTime, rTime, sel = fastr.fastPlusPlus(inputFile, dim=dim, B=B)
+    #        selection = sel
 
-    elif algorithm == "FAST-CS":
-        for run in range(repeats):
-            pTime, rTime, sel = fastr.fastCS(inputFile, dim=dim, B=B)
-            selection = sel
+    #elif algorithm == "FAST-CS":
+    #    for run in range(repeats):
+    #        pTime, rTime, sel = fastr.fastCS(inputFile, dim=dim, B=B)
+    #        selection = sel
 
-    elif algorithm == "FAST-pw":
-        for run in range(repeats):
-            pTime, rTime, sel = fastr.fast_pw(inputFile, dim=dim, B=B)
-            selection = sel
+    #elif algorithm == "FAST-pw":
+    #    for run in range(repeats):
+    #        pTime, rTime, sel = fastr.fast_pw(inputFile, dim=dim, B=B)
+    #        selection = sel
 
-    ## These algorithms do not appear to be independent of the coverage type,
-    ## so it is harder to measure the TSR of an ensemble of one of these methods.
-    ## For now we will stick to the FAST-* algorithms.
-    #elif algorithm == "GA":
-    #    for run in range(repeats):
-    #        pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
-    #        selection.update(sel)
-    #
-    #elif algorithm == "ART-D":
-    #    for run in range(repeats):
-    #        pTime, rTime, sel = competitors.artd(wBoxFile, B=B)
-    #        selection.update(sel)
-    #
-    #elif algorithm == "ART-F":
-    #    for run in range(repeats):
-    #        pTime, rTime, sel = fastr.artf(wBoxFile, B=B)
-    #        selection.update(sel)
+    if algorithm == "GA":
+        pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
+        selection = sel   
+ 
+    elif algorithm == "ART-D":
+        pTime, rTime, sel = competitors.artd(wBoxFile, B=B)
+        selection = sel
+   
+    elif algorithm == "ART-F":
+        pTime, rTime, sel = fastr.artf(wBoxFile, B=B)
+        selection = sel
 
     else:
         print('Not a supported algorithm: {}'.format(algorithm))
