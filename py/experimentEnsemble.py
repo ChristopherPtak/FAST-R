@@ -23,28 +23,19 @@ import fastr
 import metric
 
 """
-This file runs and ensembles the results of the FAST-R algorithms using the Budget scenario.
+This script runs and ensembles the results of the FAST-R algorithms using the Budget scenario.
 """
 
-def run_algorithm(script, covType, algorithm, prog, v, rep):
+SIR = [("flex", "v3"), ("grep", "v3"), ("gzip", "v1"), ("sed", "v6"), ("make", "v1")]
+D4J = [("math", "v1"), ("closure", "v1"), ("time", "v1"), ("lang", "v1"), ("chart", "v1")]
 
-    SIR = [("flex", "v3"), ("grep", "v3"), ("gzip", "v1"), ("sed", "v6"), ("make", "v1")]
-    D4J = [("math", "v1"), ("closure", "v1"), ("time", "v1"), ("lang", "v1"), ("chart", "v1")]
+def run_algorithm(script, covType, algorithm, prog, v, rep):
 
     repetitions = int(rep)
 
     # Reduced from 50 for development efficiency
     # Increase this number when generating data
     repeats = 5
-
-    ## Commented out until output is restored
-    #directory = "outputEnsemble-{}/{}_{}/".format(covType, prog, v)
-    #if not os.path.exists(directory):
-    #    os.makedirs(directory)
-    #if not os.path.exists(directory + "selections/"):
-    #    os.makedirs(directory + "selections/")
-    #if not os.path.exists(directory + "measures/"):
-    #    os.makedirs(directory + "measures/")
 
     # FAST-R parameters
     k, n, r, b = 5, 10, 1, 10
@@ -56,23 +47,10 @@ def run_algorithm(script, covType, algorithm, prog, v, rep):
     def log_(x): return int(math.log(x, 2)) + 1
     def one_(x): return 1
 
-    # BLACKBOX
-    javaFlag = True if ((prog, v) in D4J) else False
 
     inputFile = "input/{}_{}/{}-bbox.txt".format(prog, v, prog)
     wBoxFile = "input/{}_{}/{}-{}.txt".format(prog, v, prog, covType)
-    if javaFlag:
-        faultMatrix = "input/{}_{}/fault_matrix.txt".format(prog, v)
-    else:
-        faultMatrix = "input/{}_{}/fault_matrix_key_tc.pickle".format(prog, v)
-
-    ## Commented out until output is restored
-    #outpath = "outputEnsemble-{}/{}_{}/".format(covType, prog, v)
-    #sPath = outpath + "selections/"
-    #tPath = outpath + "measures/"
-
     numOfTCS = sum((1 for _ in open(inputFile)))
-
     selection = set()
 
     for reduction in range(1, repetitions+1):
@@ -139,9 +117,22 @@ def ensemble_selections(selection_sets):
     return final_selections
 
 
-def rate_selection(selection):
-    # TODO: Implement this function
-    # This should calculate the FDL and TSR metrics for the selection and return them in a tuple
+def rate_selection(selection, prog, v):
+
+    javaFlag = True if ((prog, v) in D4J) else False
+    if javaFlag:
+        faultMatrix = "input/{}_{}/fault_matrix.txt".format(prog, v)
+    else:
+        faultMatrix = "input/{}_{}/fault_matrix_key_tc.pickle".format(prog, v)
+
+    if prog in ['FAST++', 'FAST-CS', 'FAST-pw']:
+        inputFile = "input/{}_{}/{}-bbox.txt".format(prog, v, prog)
+    else:
+        inputFile = "input/{}_{}/{}-{}.txt".format(prog, v, prog, covType)
+
+    fdl = metric.fdl(selection, faultMatrix, javaFlag)
+
+    # TODO: Implement TSR calculation
     raise NotImplementedError
 
 
@@ -169,12 +160,12 @@ OPTIONS:
     ensemble = ensemble_selections([selections[m] for m in selections])
 
     for method in selections:
-        (fdl, tsr) = rate_selection(selections[method])
+        (fdl, tsr) = rate_selection(selections[method], prog, v)
         print('Results with algorithm {} using {} coverage:'.format(algorithm, method))
         print('  Fault detection loss: {}'.format(fdl))
         print('  Test suite reduction: {}'.format(fdl))
 
-    (fdl, tsr) = rate_selection(ensemble)
+    (fdl, tsr) = rate_selection(ensemble, prog, v)
     print('Results with algorithm {} using ensembled results:'.format(algorithm))
     print('  Fault detection loss: {}'.format(fdl))
     print('  Test suite reduction: {}'.format(fdl))
