@@ -72,20 +72,23 @@ def run_algorithm(script, covType, algorithm, prog, v, rep):
                 pTime, rTime, sel = fastr.fast_pw(inputFile, dim=dim, B=B)
                 selection.update(sel)
 
-        elif algorithm == "GA":
-            for run in range(repeats):
-                pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
-                selection.update(sel)
-
-        elif algorithm == "ART-D":
-            for run in range(repeats):
-                pTime, rTime, sel = competitors.artd(wBoxFile, B=B)
-                selection.update(sel)
-
-        elif algorithm == "ART-F":
-            for run in range(repeats):
-                pTime, rTime, sel = fastr.artf(wBoxFile, B=B)
-                selection.update(sel)
+        ## These algorithms do not appear to be independent of the coverage type,
+        ## so it is harder to measure the TSR of an ensemble of one of these methods.
+        ## For now we will stick to the FAST-* algorithms.
+        #elif algorithm == "GA":
+        #    for run in range(repeats):
+        #        pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
+        #        selection.update(sel)
+        #
+        #elif algorithm == "ART-D":
+        #    for run in range(repeats):
+        #        pTime, rTime, sel = competitors.artd(wBoxFile, B=B)
+        #        selection.update(sel)
+        #
+        #elif algorithm == "ART-F":
+        #    for run in range(repeats):
+        #        pTime, rTime, sel = fastr.artf(wBoxFile, B=B)
+        #        selection.update(sel)
 
         else:
             print('Not a supported algorithm: {}'.format(algorithm))
@@ -125,15 +128,12 @@ def rate_selection(selection, prog, v):
     else:
         faultMatrix = "input/{}_{}/fault_matrix_key_tc.pickle".format(prog, v)
 
-    if prog in ['FAST++', 'FAST-CS', 'FAST-pw']:
-        inputFile = "input/{}_{}/{}-bbox.txt".format(prog, v, prog)
-    else:
-        inputFile = "input/{}_{}/{}-{}.txt".format(prog, v, prog, covType)
+    inputFile = "input/{}_{}/{}-bbox.txt".format(prog, v, prog)
 
     fdl = metric.fdl(selection, faultMatrix, javaFlag)
+    tsr = metric.tsr(selection, inputFile)
 
-    # TODO: Implement TSR calculation
-    raise NotImplementedError
+    return (fdl, tsr)
 
 
 if __name__ == "__main__":
@@ -162,11 +162,13 @@ OPTIONS:
     for method in selections:
         (fdl, tsr) = rate_selection(selections[method], prog, v)
         print('Results with algorithm {} using {} coverage:'.format(algorithm, method))
+        #print('  Selected tests: {}'.format(selections[method]))
         print('  Fault detection loss: {}'.format(fdl))
         print('  Test suite reduction: {}'.format(fdl))
 
     (fdl, tsr) = rate_selection(ensemble, prog, v)
     print('Results with algorithm {} using ensembled results:'.format(algorithm))
+    #print('  Selected tests: {}'.format(ensemble))
     print('  Fault detection loss: {}'.format(fdl))
     print('  Test suite reduction: {}'.format(fdl))
 
