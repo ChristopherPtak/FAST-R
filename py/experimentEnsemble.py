@@ -26,7 +26,7 @@ import metric
 This file runs and ensembles the results of the FAST-R algorithms using the Budget scenario.
 """
 
-def run_ensemble(script, covType, prog, v, rep):
+def run_algorithm(script, covType, algorithm, prog, v, rep):
 
     SIR = [("flex", "v3"), ("grep", "v3"), ("gzip", "v1"), ("sed", "v6"), ("make", "v1")]
     D4J = [("math", "v1"), ("closure", "v1"), ("time", "v1"), ("lang", "v1"), ("chart", "v1")]
@@ -73,36 +73,76 @@ def run_ensemble(script, covType, prog, v, rep):
 
     numOfTCS = sum((1 for _ in open(inputFile)))
 
+    selection = set()
+
     for reduction in range(1, repetitions+1):
 
         B = int(numOfTCS * reduction / 100)
 
-        run_algorithm(fastr.fastPlusPlus, "FAST++",  inputFile, faultMatrix, javaFlag, dim, B, repeats)
-        run_algorithm(fastr.fastCS,       "FAST-CS", inputFile, faultMatrix, javaFlag, dim, B, repeats)
-        run_algorithm(fastr.fast_pw,      "FAST-pw", inputFile, faultMatrix, javaFlag, dim, B, repeats)
+        if algorithm == "FAST++":
+            for run in range(repeats):
+                pTime, rTime, sel = fastr.fastPlusPlus(inputFile, dim=dim, B=B)
+                selection.update(sel)
 
-        # WHITEBOX APPROACHES
-        run_whitebox_algorithm(competitors.ga,    "GA",    wBoxFile, faultMatrix, javaFlag, B, repeats)
-        run_whitebox_algorithm(competitors.artd, "ART-D", wBoxFile, faultMatrix, javaFlag, B, repeats)
-        run_whitebox_algorithm(competitors.artf, "ART-F", wBoxFile, faultMatrix, javaFlag, B, repeats)
+        elif algorithm == "FAST-CS":
+            for run in range(repeats):
+                pTime, rTime, sel = fastr.fastCS(inputFile, dim=dim, B=B)
+                selection.update(sel)
 
-        # TODO: Figure out how to ensemble these results
+        elif algorithm == "FAST-pw":
+            for run in range(repeats):
+                pTime, rTime, sel = fastr.fast_pw(inputFile, dim=dim, B=B)
+                selection.update(sel)
+
+        elif algorithm == "GA":
+            for run in range(repeats):
+                pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
+                selection.update(sel)
+
+        elif algorithm == "ART-D":
+            for run in range(repeats):
+                pTime, rTime, sel = competitors.artd(wBoxFile, B=B)
+                selection.update(sel)
+
+        elif algorithm == "ART-F":
+            for run in range(repeats):
+                pTime, rTime, sel = fastr.artf(wBoxFile, B=B)
+                selection.update(sel)
+
+        else:
+            print('Not a supported algorithm: {}'.format(algorithm))
+            exit()
+
+    return selection
 
 
-def run_algorithm(algorithm, alg_name, inputFile, faultMatrix, javaFlag, dim, B, repeats):
-    # TODO: Return something sensible from this function
-    for run in range(repeats):
-        pTime, rTime, sel = fastr.fastPlusPlus(inputFile, dim=dim, B=B)
-        fdl = metric.fdl(sel, faultMatrix, javaFlag)
-    return
+def ensemble_selections(selection_sets):
+
+    # TODO: Add more ensembling methods so we can compare them
+
+    counts = {}
+    cases = len(selection_sets)
+    threshold = cases // 2
+
+    for selections in selection_sets:
+        for selection in selections:
+            if selection in counts:
+                counts[selection] += 1
+            else:
+                counts[selection] = 1
+
+    final_selections = []
+    for selection in counts:
+        if counts[selection] > threshold:
+            final_selections.append(selection)
+
+    return final_selections
 
 
-def run_whitebox_algorithm(algorithm, alg_name, wBoxFile, faultMatrix, javaFlag, B, repeats):
-    # TODO: Return something sensible from this function
-    for run in range(repeats):
-        pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
-        fdl = metric.fdl(sel, faultMatrix, javaFlag)
-    return
+def rate_selection(selection):
+    # TODO: Implement this function
+    # This should calculate the FDL and TSR metrics for the selection and return them in a tuple
+    raise NotImplementedError
 
 
 if __name__ == "__main__":
@@ -118,6 +158,25 @@ OPTIONS:
         print(usage)
         exit()
 
-    run_ensemble(*sys.argv)
+    script, algorithm, prog, v, rep = sys.argv
+
+    selections = {}
+
+    selections['function'] = run_algorithm(script, 'function', algorithm, prog, v, rep)
+    selections['line']     = run_algorithm(script, 'line',     algorithm, prog, v, rep)
+    selections['branch']   = run_algorithm(script, 'branch',   algorithm, prog, v, rep)
+
+    ensemble = ensemble_selections([selections[m] for m in selections])
+
+    for method in selections:
+        (fdl, tsr) = rate_selection(selections[method])
+        print('Results with algorithm {} using {} coverage:'.format(algorithm, method))
+        print('  Fault detection loss: {}'.format(fdl))
+        print('  Test suite reduction: {}'.format(fdl))
+
+    (fdl, tsr) = rate_selection(ensemble)
+    print('Results with algorithm {} using ensembled results:'.format(algorithm))
+    print('  Fault detection loss: {}'.format(fdl))
+    print('  Test suite reduction: {}'.format(fdl))
 
 
