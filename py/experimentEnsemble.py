@@ -31,8 +31,6 @@ D4J = [("math", "v1"), ("closure", "v1"), ("time", "v1"), ("lang", "v1"), ("char
 
 def run_algorithm(script, covType, algorithm, prog, v, red):
 
-    repetitions = int(rep)
-
     ## Removed since we are only running once with a large B
     ## Reduced from 50 for development efficiency
     ## Increase this number when generating data
