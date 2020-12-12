@@ -30,18 +30,21 @@ def run_ensemble(script, covType, prog, v, rep):
 
     SIR = [("flex", "v3"), ("grep", "v3"), ("gzip", "v1"), ("sed", "v6"), ("make", "v1")]
     D4J = [("math", "v1"), ("closure", "v1"), ("time", "v1"), ("lang", "v1"), ("chart", "v1")]
-    script, covType, prog, v, rep = sys.argv
+
     repetitions = int(rep)
+
     # Reduced from 50 for development efficiency
+    # Increase this number when generating data
     repeats = 5
 
-    directory = "outputEnsemble-{}/{}_{}/".format(covType, prog, v)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    if not os.path.exists(directory + "selections/"):
-        os.makedirs(directory + "selections/")
-    if not os.path.exists(directory + "measures/"):
-        os.makedirs(directory + "measures/")
+    ## Commented out until output is restored
+    #directory = "outputEnsemble-{}/{}_{}/".format(covType, prog, v)
+    #if not os.path.exists(directory):
+    #    os.makedirs(directory)
+    #if not os.path.exists(directory + "selections/"):
+    #    os.makedirs(directory + "selections/")
+    #if not os.path.exists(directory + "measures/"):
+    #    os.makedirs(directory + "measures/")
 
     # FAST-R parameters
     k, n, r, b = 5, 10, 1, 10
@@ -63,80 +66,43 @@ def run_ensemble(script, covType, prog, v, rep):
     else:
         faultMatrix = "input/{}_{}/fault_matrix_key_tc.pickle".format(prog, v)
 
-    outpath = "outputEnsemble-{}/{}_{}/".format(covType, prog, v)
-    sPath = outpath + "selections/"
-    tPath = outpath + "measures/"
+    ## Commented out until output is restored
+    #outpath = "outputEnsemble-{}/{}_{}/".format(covType, prog, v)
+    #sPath = outpath + "selections/"
+    #tPath = outpath + "measures/"
 
     numOfTCS = sum((1 for _ in open(inputFile)))
 
     for reduction in range(1, repetitions+1):
+
         B = int(numOfTCS * reduction / 100)
 
-        for run in range(repeats):
-            pTime, rTime, sel = fastr.fastPlusPlus(inputFile, dim=dim, B=B)
-            fdl = metric.fdl(sel, faultMatrix, javaFlag)
-            sOut = "{}/{}-{}-{}.pickle".format(sPath, "FAST++", reduction, run+1)
-            pickle.dump(sel, open(sOut, "wb"))
-            tOut = "{}/{}-{}-{}.pickle".format(tPath, "FAST++", reduction, run+1)
-            pickle.dump((pTime, rTime, fdl), open(tOut, "wb"))
-            print("FAST++", reduction, pTime, rTime, fdl)
-
-        for run in range(repeats):
-            pTime, rTime, sel = fastr.fastCS(inputFile, dim=dim, B=B)
-            fdl = metric.fdl(sel, faultMatrix, javaFlag)
-            sOut = "{}/{}-{}-{}.pickle".format(sPath, "FAST-CS", reduction, run+1)
-            pickle.dump(sel, open(sOut, "wb"))
-            tOut = "{}/{}-{}-{}.pickle".format(tPath, "FAST-CS", reduction, run+1)
-            pickle.dump((pTime, rTime, fdl), open(tOut, "wb"))
-            print("FAST-CS", reduction, pTime, rTime, fdl)
-
-
-        for run in range(repeats):
-            pTime, rTime, sel = fastr.fast_pw(inputFile, r, b, bbox=True, k=k, memory=True, B=B)
-            fdl = metric.fdl(sel, faultMatrix, javaFlag)
-            sOut = "{}/{}-{}-{}.pickle".format(sPath, "FAST-pw", reduction, run+1)
-            pickle.dump(sel, open(sOut, "wb"))
-            tOut = "{}/{}-{}-{}.pickle".format(tPath, "FAST-pw", reduction, run+1)
-            pickle.dump((pTime, rTime, fdl), open(tOut, "wb"))
-            print("FAST-pw", reduction, pTime, rTime, fdl)
-
-
-        for run in range(repeats):
-            pTime, rTime, sel = fastr.fast_(inputFile, all_, r=r, b=b, bbox=True, k=k, memory=True, B=B)
-            fdl = metric.fdl(sel, faultMatrix, javaFlag)
-            sOut = "{}/{}-{}-{}.pickle".format(sPath, "FAST-all", reduction, run+1)
-            pickle.dump(sel, open(sOut, "wb"))
-            tOut = "{}/{}-{}-{}.pickle".format(tPath, "FAST-all", reduction, run+1)
-            pickle.dump((pTime, rTime, fdl), open(tOut, "wb"))
-            print("FAST-all", reduction, pTime, rTime, fdl)
+        run_algorithm(fastr.fastPlusPlus, "FAST++",  inputFile, faultMatrix, javaFlag, dim, B, repeats)
+        run_algorithm(fastr.fastCS,       "FAST-CS", inputFile, faultMatrix, javaFlag, dim, B, repeats)
+        run_algorithm(fastr.fast_pw,      "FAST-pw", inputFile, faultMatrix, javaFlag, dim, B, repeats)
 
         # WHITEBOX APPROACHES
-        for run in range(repeats):
-            pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
-            fdl = metric.fdl(sel, faultMatrix, javaFlag)
-            sOut = "{}/{}-{}-{}.pickle".format(sPath, "GA", reduction, run+1)
-            pickle.dump(sel, open(sOut, "wb"))
-            tOut = "{}/{}-{}-{}.pickle".format(tPath, "GA", reduction, run+1)
-            pickle.dump((pTime, rTime, fdl), open(tOut, "wb"))
-            print("GA", reduction, pTime, rTime, fdl)
+        run_whitebox_algorithm(competitors.ga,    "GA",    wBoxFile, faultMatrix, javaFlag, B, repeats)
+        run_whitebox_algorithm(competitors.artd, "ART-D", wBoxFile, faultMatrix, javaFlag, B, repeats)
+        run_whitebox_algorithm(competitors.artf, "ART-F", wBoxFile, faultMatrix, javaFlag, B, repeats)
 
-        for run in range(repeats):
-            pTime, rTime, sel = competitors.artd(wBoxFile, B=B)
-            fdl = metric.fdl(sel, faultMatrix, javaFlag)
-            sOut = "{}/{}-{}-{}.pickle".format(sPath, "ART-D", reduction, run+1)
-            pickle.dump(sel, open(sOut, "wb"))
-            tOut = "{}/{}-{}-{}.pickle".format(tPath, "ART-D", reduction, run+1)
-            pickle.dump((pTime, rTime, fdl), open(tOut, "wb"))
-            print("ART-D", reduction, pTime, rTime, fdl)
+        # TODO: Figure out how to ensemble these results
 
-        for run in range(repeats):
-            pTime, rTime, sel = competitors.artf(wBoxFile, B=B)
-            fdl = metric.fdl(sel, faultMatrix, javaFlag)
-            sOut = "{}/{}-{}-{}.pickle".format(sPath, "ART-F", reduction, run+1)
-            pickle.dump(sel, open(sOut, "wb"))
-            tOut = "{}/{}-{}-{}.pickle".format(tPath, "ART-F", reduction, run+1)
-            pickle.dump((pTime, rTime, fdl), open(tOut, "wb"))
-            print("ART-F", reduction, pTime, rTime, fdl)
+
+def run_algorithm(algorithm, alg_name, inputFile, faultMatrix, javaFlag, dim, B, repeats):
+    # TODO: Return something sensible from this function
+    for run in range(repeats):
+        pTime, rTime, sel = fastr.fastPlusPlus(inputFile, dim=dim, B=B)
+        fdl = metric.fdl(sel, faultMatrix, javaFlag)
+    return
+
+
+def run_whitebox_algorithm(algorithm, alg_name, wBoxFile, faultMatrix, javaFlag, B, repeats):
+    # TODO: Return something sensible from this function
+    for run in range(repeats):
+        pTime, rTime, sel = competitors.ga(wBoxFile, B=B)
+        fdl = metric.fdl(sel, faultMatrix, javaFlag)
+    return
 
 
 if __name__ == "__main__":
