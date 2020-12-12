@@ -162,14 +162,14 @@ OPTIONS:
     for method in selections:
         (fdl, tsr) = rate_selection(selections[method], prog, v)
         print('Results with algorithm {} using {} coverage:'.format(algorithm, method))
-        #print('  Selected tests: {}'.format(selections[method]))
+        print('  Selected tests: {}'.format(selections[method]))
         print('  Fault detection loss: {}'.format(fdl))
-        print('  Test suite reduction: {}'.format(fdl))
+        print('  Test suite reduction: {}'.format(tsr))
 
     (fdl, tsr) = rate_selection(ensemble, prog, v)
     print('Results with algorithm {} using ensembled results:'.format(algorithm))
-    #print('  Selected tests: {}'.format(ensemble))
+    print('  Selected tests: {}'.format(ensemble))
     print('  Fault detection loss: {}'.format(fdl))
-    print('  Test suite reduction: {}'.format(fdl))
+    print('  Test suite reduction: {}'.format(tsr))
 
 
