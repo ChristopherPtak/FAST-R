@@ -29,7 +29,7 @@ This script runs and ensembles the results of the FAST-R algorithms using the Bu
 SIR = [("flex", "v3"), ("grep", "v3"), ("gzip", "v1"), ("sed", "v6"), ("make", "v1")]
 D4J = [("math", "v1"), ("closure", "v1"), ("time", "v1"), ("lang", "v1"), ("chart", "v1")]
 
-def run_algorithm(script, covType, algorithm, prog, v, rep):
+def run_algorithm(script, covType, algorithm, prog, v, red):
 
     repetitions = int(rep)
 
@@ -55,7 +55,7 @@ def run_algorithm(script, covType, algorithm, prog, v, rep):
     selection = set()
 
     # Change this number to determine the fraction of the total tests we want
-    reduction = 0.25
+    reduction = float(red)
 
     B = int(numOfTCS * reduction)
 
@@ -133,12 +133,12 @@ def rate_selection(selection, prog, v):
 
 if __name__ == "__main__":
 
-    usage = """USAGE: python3 py/experimentEnsemble.py <program> <version> <repetitions>
+    usage = """USAGE: python3 py/experimentEnsemble.py <program> <version> <reduction>
 OPTIONS:
   <program> <version>: the target subject and its respective version.
     options: flex v3, grep v3, gzip v1, make v1, sed v6, chart v1, closure v1, lang v1, math v1, time v1
-  <repetitions>: number of times the test suite reduction should be computed.
-    options: positive integer value, e.g. 50"""
+  <reduction>: The fraction of the original test suite size to target.
+    options: positive float value, e.g. 0.25"""
 
     if len(sys.argv) != 5:
         print(usage)
