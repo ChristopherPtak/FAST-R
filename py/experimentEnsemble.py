@@ -90,27 +90,45 @@ def run_algorithm(script, covType, algorithm, prog, v, red):
     return selection
 
 
-def ensemble_selections(selection_sets):
+def ensemble_selections(selection_sets, method):
 
-    # TODO: Add more ensembling methods so we can compare them
+    final_selections = set()
 
-    counts = {}
-    cases = len(selection_sets)
-    threshold = cases // 2
+    if method == 'majority':
 
-    for selections in selection_sets:
-        for selection in selections:
-            if selection in counts:
-                counts[selection] += 1
-            else:
-                counts[selection] = 1
+        counts = {}
+        cases = len(selection_sets)
+        threshold = cases // 2
 
-    final_selections = []
-    for selection in counts:
-        if counts[selection] > threshold:
-            final_selections.append(selection)
+        for selections in selection_sets:
+            for selection in selections:
+                if selection in counts:
+                    counts[selection] += 1
+                else:
+                    counts[selection] = 1
 
-    return final_selections
+        for selection in counts:
+            if counts[selection] > threshold:
+                final_selections.add(selection)
+
+    elif method == 'union':
+
+        for selections in selection_sets:
+            final_selections.update(selections)
+
+    elif method == 'intersection':
+
+        ssiter = iter(selection_sets)
+        final_selections = next(ssiter)
+
+        for selections in ssiter:
+            final_selections = final_selections.intersect(selections)
+
+    else:
+        print('Not a supported ensembling method: {}'.format(method))
+        exit()
+
+    return list(final_selections)
 
 
 def rate_selection(selection, prog, v):
@@ -131,18 +149,22 @@ def rate_selection(selection, prog, v):
 
 if __name__ == "__main__":
 
-    usage = """USAGE: python3 py/experimentEnsemble.py <program> <version> <reduction>
+    usage = """USAGE: python3 py/experimentEnsemble.py <algorithm> <ensemble> <program> <version> <reduction>
 OPTIONS:
-  <program> <version>: the target subject and its respective version.
+  <algorithm>: The algorithm to use for generating test cases to be ensembled.
+    options: GA, ART-D, ART-F
+  <ensemble>: The method of ensembling the different generated test suites together.
+    options: majority, union, intersection
+  <program> <version>: The target subject and its respective version.
     options: flex v3, grep v3, gzip v1, make v1, sed v6, chart v1, closure v1, lang v1, math v1, time v1
   <reduction>: The fraction of the original test suite size to target.
     options: positive float value, e.g. 0.25"""
 
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 6:
         print(usage)
         exit()
 
-    script, algorithm, prog, v, rep = sys.argv
+    script, algorithm, method, prog, v, rep = sys.argv
 
     selections = {}
 
@@ -150,11 +172,11 @@ OPTIONS:
     selections['line']     = run_algorithm(script, 'line',     algorithm, prog, v, rep)
     selections['branch']   = run_algorithm(script, 'branch',   algorithm, prog, v, rep)
 
-    ensemble = ensemble_selections([selections[m] for m in selections])
+    ensemble = ensemble_selections([selections[m] for m in selections], method)
 
-    for method in selections:
-        (fdl, tsr) = rate_selection(selections[method], prog, v)
-        print('Results with algorithm {} using {} coverage:'.format(algorithm, method))
+    for coverageType in selections:
+        (fdl, tsr) = rate_selection(selections[coverageType], prog, v)
+        print('Results with algorithm {} using {} coverage:'.format(algorithm, coverageType))
         print('  Fault detection loss: {}'.format(fdl))
         print('  Test suite reduction: {}'.format(tsr))
 
