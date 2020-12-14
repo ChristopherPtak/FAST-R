@@ -138,6 +138,7 @@ def ga_multi(input_files, B=0):
     cov_len = [[len(cov) for cov in cov_info.values()] for cov_info in cov_infos]
     cov_std = [stdev(i) for i in cov_len]
     cov_mean = [mean(i) for i in cov_len]
+    #print(f"std: {cov_std} mean:{cov_mean}")
 
     while len(cov_infos_left[0]) > 0:
 
@@ -149,12 +150,14 @@ def ga_multi(input_files, B=0):
         #find test that gives maximum additional coverage
         s, uncs_s = 0, float('-inf')
         for ui in cov_infos_left[0]:
+            unc = 0
             for i in range(cov_type_num):
                 uncs = len(cov_infos[i][ui] - cg[i])
                 #normalize
-                uncs += (uncs - cov_mean[i])/cov_std[i]
-                if uncs > uncs_s:
-                    s, uncs_s = ui, uncs
+                uncs = (uncs - cov_mean[i])/cov_std[i]
+                unc += uncs
+            if unc > uncs_s:
+                s, uncs_s = ui, uncs
         reduced_tests.append(s)
 
         # select budget B

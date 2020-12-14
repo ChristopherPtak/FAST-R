@@ -35,7 +35,7 @@ def run_algorithm(script, covType, algorithm, prog, v, red):
     ## Reduced from 50 for development efficiency
     ## Increase this number when generating data
     #repeats = 5
-
+    print(f"running {algorithm} {covType}.....")
     # FAST-R parameters
     k, n, r, b = 5, 10, 1, 10
     dim = 10
@@ -95,6 +95,7 @@ def ga_multi(prog, v, red):
     ## Reduced from 50 for development efficiency
     ## Increase this number when generating data
     #repeats = 5
+    print("running ga_multi.....")
     covs = ["branch","line","function"]
     inputFile = "input/{}_{}/{}-bbox.txt".format(prog, v, prog)
     wBoxFiles = ["input/{}_{}/{}-{}.txt".format(prog, v, prog, covType) for covType in covs]
@@ -153,18 +154,18 @@ def ensemble_selections(selection_sets, method):
 
 def rate_selection(selection, prog, v):
 
-    javaFlag = True if ((prog, v) in D4J) else False
+    javaFlag = True if v == 'v0' else False
     if javaFlag:
-        faultMatrix = "input/{}_{}/fault_matrix.txt".format(prog, v)
+        faultMatrix = "input/{}_{}/fault_matrix.pickle".format(prog, v)
     else:
         faultMatrix = "input/{}_{}/fault_matrix_key_tc.pickle".format(prog, v)
-
     inputFile = "input/{}_{}/{}-bbox.txt".format(prog, v, prog)
 
-    fdl = metric.fdl(selection, faultMatrix, javaFlag)
+    fdl = metric.fdl(selection, faultMatrix, False)
     tsr = metric.tsr(selection, inputFile)
-
-    return (fdl, tsr)
+    fft = metric.fft(selection, faultMatrix,False)
+    apfd = metric.apfd(selection,faultMatrix,False)
+    return (fdl,fft,apfd,  tsr)
 
 
 if __name__ == "__main__":
@@ -176,8 +177,7 @@ OPTIONS:
   <ensemble>: The method of ensembling the different generated test suites together.
     options: majority, union, intersection
   <program> <version>: The target subject and its respective version.
-    options: flex v3, grep v3, gzip v1, make v1, sed v6, chart v1, closure v1, lang v1, math v1, time v1
-  <reduction>: The fraction of the original test suite size to target.
+    options: flex_v3, grep_v3, gzip_v1, make_v1, sed_v6, chart_v0, closure_v0, lang_v0, math_v0, and time_v0.
     options: positive float value, e.g. 0.25"""
 
     if len(sys.argv) != 6:
@@ -196,14 +196,18 @@ OPTIONS:
 
     selections['ga_multi'] = ga_multi(prog,v,rep)
     for coverageType in selections:
-        (fdl, tsr) = rate_selection(selections[coverageType], prog, v)
+        (fdl, ffd,apfd,tsr) = rate_selection(selections[coverageType], prog, v)
         print('Results with algorithm {} using {} coverage:'.format(algorithm, coverageType))
         print('  Fault detection loss: {}'.format(fdl))
         print('  Test suite reduction: {}'.format(tsr))
+        print(f"  Position of the First fault detected:{ffd}")
+        print(f"  Average Percentage of Faults Detected:{apfd}\n")
 
-    (fdl, tsr) = rate_selection(ensemble, prog, v)
+    (fdl,ffd,apfd, tsr) = rate_selection(ensemble, prog, v)
     print('Results with algorithm {} using ensembled results:'.format(algorithm))
     print('  Fault detection loss: {}'.format(fdl))
     print('  Test suite reduction: {}'.format(tsr))
+    print(f"  Position of the First fault detected:{ffd}")
+    print(f"  Average Percentage of Faults Detected:{apfd}")
 
 
