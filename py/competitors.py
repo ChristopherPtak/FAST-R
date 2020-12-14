@@ -117,19 +117,26 @@ def gaAdequacy(input_file):
     ptime_start = time.clock()
 
     TCS = loadTestSuite(input_file)
+    #sort by the length of coveraged number
     TS = OrderedDict(sorted(TCS.items(), key=lambda t: -len(t[1])))
 
+    #ordered dict
     U = TS.copy()
+    #recored the entity covered so far
     Cg = set()
 
     TS[0] = set()
+    # recored the index of selected test
     P = [0]
 
+    #length of maximum coverage
     maxC = len(reduce(lambda x, y: x | y, TS.values()))
 
     while len(U) > 0:
+        #all covered
         if len(Cg) == maxC:
             break
+        #find test that gives maximum additional coverage
         s = select(TS, U, Cg)
         P.append(s)
 
