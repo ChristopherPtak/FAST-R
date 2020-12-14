@@ -16,6 +16,7 @@ along with this source.  If not, see <http://www.gnu.org/licenses/>.
 from collections import defaultdict
 from collections import OrderedDict
 from functools import reduce
+from statistics import mean,stdev
 import random
 import time
 import sys
@@ -102,6 +103,72 @@ def ga(input_file, B=0):
     ptime = time.clock() - ptime_start
 
     return 0.0, ptime, P[1:]
+
+
+def ga_multi(input_files, B=0):
+
+    ptime_start = time.clock()
+
+    # TCS = loadTestSuite(input_file)
+
+    #read in coverage information
+    cov_infos = [loadTestSuite(i) for i in input_files]
+
+    #sort by the length of coveraged number
+    cov_infos =  [OrderedDict(sorted(TCS.items(), key=lambda t: -len(t[1]))) for TCS in cov_infos]
+
+
+    # budget B modification
+    if B == 0 or B > len(cov_infos[0]):
+        B = len(cov_infos[0])
+
+    #remaining ordered dict
+    cov_infos_left = cov_infos.copy()
+
+    cov_type_num = len(cov_infos)
+    #recored the entity covered so far
+    cg = [set()] * cov_type_num
+
+    reduced_tests = []
+
+    #length of maximum coverage
+    maxC = [len(reduce(lambda x, y: x | y, TS.values())) for TS in cov_infos]
+
+    #number of covered entity for each function
+    cov_len = [[len(cov) for cov in cov_info.values()] for cov_info in cov_infos]
+    cov_std = [stdev(i) for i in cov_len]
+    cov_mean = [mean(i) for i in cov_len]
+
+    while len(cov_infos_left[0]) > 0:
+
+        for i in range(cov_type_num):
+            if cg[i] == maxC[i]:
+                #all covered, start a new record
+                cg[i] = set()
+
+        #find test that gives maximum additional coverage
+        s, uncs_s = 0, float('-inf')
+        for ui in cov_infos_left[0]:
+            for i in range(cov_type_num):
+                uncs = len(cov_infos[i][ui] - cg[i])
+                #normalize
+                uncs += (uncs - cov_mean[i])/cov_std[i]
+                if uncs > uncs_s:
+                    s, uncs_s = ui, uncs
+        reduced_tests.append(s)
+
+        # select budget B
+        if len(reduced_tests) >= B:
+            break
+
+        for i in range(cov_type_num):
+            cg[i] = cg[i] | cov_infos_left[i][s]
+            del cov_infos_left[i][s]
+
+    ptime = time.clock() - ptime_start
+
+    return 0.0, ptime, reduced_tests
+
 
 
 # GREEDY SET COVER (ADDITIONAL and ADEQUATE)
