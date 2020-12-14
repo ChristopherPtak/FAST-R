@@ -198,7 +198,7 @@ OPTIONS:
 
     ensemble = ensemble_selections([selections[m] for m in selections], method)
 
-    selections['ga_multi'] = ga_multi(prog,v,rep)
+    selections['ga_multi'] = ga_multi(prog,v,red)
     for coverageType in selections:
         (fdl, ffd,apfd,tsr) = rate_selection(selections[coverageType], prog, v)
         print('Results with algorithm {} using {} coverage:'.format(algorithm, coverageType))

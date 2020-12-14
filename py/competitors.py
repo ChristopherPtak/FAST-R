@@ -150,14 +150,15 @@ def ga_multi(input_files, B=0):
         #find test that gives maximum additional coverage
         s, uncs_s = 0, float('-inf')
         for ui in cov_infos_left[0]:
-            unc = 0
+            total_score = 0
             for i in range(cov_type_num):
-                uncs = len(cov_infos[i][ui] - cg[i])
+                # length of additional coverage
+                score = len(cov_infos[i][ui] - cg[i])
                 #normalize
-                uncs = (uncs - cov_mean[i])/cov_std[i]
-                unc += uncs
-            if unc > uncs_s:
-                s, uncs_s = ui, uncs
+                score = (score - cov_mean[i])/cov_std[i]
+                total_score += score
+            if total_score > uncs_s:
+                s, uncs_s = ui, total_score
         reduced_tests.append(s)
 
         # select budget B
@@ -165,6 +166,7 @@ def ga_multi(input_files, B=0):
             break
 
         for i in range(cov_type_num):
+            #update coverage
             cg[i] = cg[i] | cov_infos_left[i][s]
             del cov_infos_left[i][s]
 
