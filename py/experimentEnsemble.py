@@ -89,6 +89,26 @@ def run_algorithm(script, covType, algorithm, prog, v, red):
 
     return selection
 
+def ga_multi(prog, v, red):
+
+    ## Removed since we are only running once with a large B
+    ## Reduced from 50 for development efficiency
+    ## Increase this number when generating data
+    #repeats = 5
+    covs = ["branch","line","function"]
+    inputFile = "input/{}_{}/{}-bbox.txt".format(prog, v, prog)
+    wBoxFiles = ["input/{}_{}/{}-{}.txt".format(prog, v, prog, covType) for covType in covs]
+    numOfTCS = sum((1 for _ in open(inputFile)))
+    selection = set()
+    # Change this number to determine the fraction of the total tests we want
+    reduction = float(red)
+    B = int(numOfTCS * reduction)
+
+    pTime, rTime, sel = competitors.ga_multi(wBoxFiles, B=B)
+    selection = sel
+
+    return selection
+
 
 def ensemble_selections(selection_sets, method):
 
@@ -174,6 +194,7 @@ OPTIONS:
 
     ensemble = ensemble_selections([selections[m] for m in selections], method)
 
+    selections['ga_multi'] = ga_multi(prog,v,rep)
     for coverageType in selections:
         (fdl, tsr) = rate_selection(selections[coverageType], prog, v)
         print('Results with algorithm {} using {} coverage:'.format(algorithm, coverageType))
