@@ -133,17 +133,21 @@ def ensemble_selections(selection_sets, method):
                 final_selections.add(selection)
 
     elif method == 'union':
+        
+        selection_sets = [set(selection) for selection in selection_sets]
 
         for selections in selection_sets:
             final_selections.update(selections)
 
     elif method == 'intersection':
 
+        selection_sets = [set(selection) for selection in selection_sets]
+
         ssiter = iter(selection_sets)
         final_selections = next(ssiter)
 
         for selections in ssiter:
-            final_selections = final_selections.intersect(selections)
+            final_selections = final_selections.intersection(selections)
 
     else:
         print('Not a supported ensembling method: {}'.format(method))
@@ -184,13 +188,13 @@ OPTIONS:
         print(usage)
         exit()
 
-    script, algorithm, method, prog, v, rep = sys.argv
+    script, algorithm, method, prog, v, red = sys.argv
 
     selections = {}
 
-    selections['function'] = run_algorithm(script, 'function', algorithm, prog, v, rep)
-    selections['line']     = run_algorithm(script, 'line',     algorithm, prog, v, rep)
-    selections['branch']   = run_algorithm(script, 'branch',   algorithm, prog, v, rep)
+    selections['function'] = run_algorithm(script, 'function', algorithm, prog, v, red)
+    selections['line']     = run_algorithm(script, 'line',     algorithm, prog, v, red)
+    selections['branch']   = run_algorithm(script, 'branch',   algorithm, prog, v, red)
 
     ensemble = ensemble_selections([selections[m] for m in selections], method)
 
