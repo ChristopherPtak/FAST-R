@@ -80,7 +80,7 @@ def run_algorithm(script, covType, algorithm, prog, v, red):
         selection = sel
    
     elif algorithm == "ART-F":
-        pTime, rTime, sel = fastr.artf(wBoxFile, B=B)
+        pTime, rTime, sel = competitors.artf(wBoxFile, B=B)
         selection = sel
 
     else:
@@ -169,7 +169,7 @@ def rate_selection(selection, prog, v):
     tsr = metric.tsr(selection, inputFile)
     fft = metric.fft(selection, faultMatrix,False)
     apfd = metric.apfd(selection,faultMatrix,False)
-    return (fdl,fft,apfd,  tsr)
+    return (fdl,fft,apfd,tsr)
 
 
 if __name__ == "__main__":
